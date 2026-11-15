@@ -1004,7 +1004,7 @@ const residualPlot = {
       };
     }
     const fig = plot({
-      x: [0, 11], y: [-4, 4], w: 540, h: 340, xlabelEvery: 1, ylabelEvery: 1, xname: 'x', yname: 'residual',
+      x: [0, 11], y: [-4, 4], w: 540, h: 340, xLabelsBottom: true, xlabelEvery: 1, ylabelEvery: 1, xname: 'x', yname: 'residual',
       points: xs.map((x, i) => ({ x, y: rs[i], r: 3.5 })),
     });
     return {

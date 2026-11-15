@@ -11,7 +11,7 @@ export function esc(s) {
 const ICONS = {
   brand: '<svg width="34" height="28" viewBox="0 0 34 28" aria-hidden="true"><path d="M17 3 L31 25 H3 Z" fill="none" stroke="#2f3a8f" stroke-width="3.2" stroke-linejoin="round"/><path d="M11 19 H23" stroke="#4353f0" stroke-width="3" stroke-linecap="round"/></svg>',
   book: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="12" rx="1"/><path d="M2 19h20"/></svg>',
-  star: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  star: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M3 7a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>',
   cal: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>',
   user: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
@@ -63,7 +63,7 @@ export function homeSidebar(active) {
   const solved = d.solved.filter(Boolean).length;
   const units = UNITS.map(
     (u) =>
-      `<a class="side-item${active === `unit-${u.id}` ? ' on' : ''}" href="#/unit/${u.id}">${ICONS.book}<span>Unit ${u.id}: ${esc(u.title)}</span></a>`,
+      `<a class="side-item${active === `unit-${u.id}` ? ' on' : ''}" href="#/unit/${u.id}">${ICONS.book}<span>Unit ${u.id}<span class="unit-long">: ${esc(u.title)}</span></span></a>`,
   ).join('');
   return (
     `<div class="side-top">${brand()}` +

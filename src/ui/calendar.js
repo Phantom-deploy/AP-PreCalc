@@ -33,7 +33,7 @@ export function renderCalendar({ side, view }) {
   for (; monday <= COURSE.end; monday = addDays(monday, 7)) rows += `<tr>${[0, 1, 2, 3, 4].map((k) => cell(addDays(monday, k), today)).join('')}</tr>`;
   view.innerHTML =
     `<div class="page-head"><p class="eyebrow">${COURSE.name} &middot; ${COURSE.term}</p><h1 class="serif page-title">Course Calendar</h1>` +
-    `<p class="head-note">Subject to change, so check your class calendar too. Select a lesson to practice it.</p></div>` +
+    `<p class="head-note">Subject to change, so check your class calendar too. Select a lesson to practice it.</p><p class="head-note mobile-only">Swipe the calendar sideways to see the whole week.</p></div>` +
     `<div class="page-body"><div class="card cal-card"><div class="cal-wrap"><table class="cal"><thead><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody>${rows}</tbody></table></div></div>` +
     `<p class="legend"><span class="key-box off"></span> No school <span class="key-box assess"></span> Test or assessment <span class="key-box review"></span> Review <span class="key-box today"></span> Today</p></div>`;
 }

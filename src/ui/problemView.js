@@ -77,7 +77,9 @@ export function mountProblem(root, opts) {
   const setAttempt = (text) => {
     attemptEl.textContent = text;
   };
-  setAttempt('Attempt 1');
+  const MAX = 2;
+  const attemptText = () => (attempts < MAX ? `Attempt ${attempts + 1} out of ${MAX}` : 'Extra attempt (no credit)');
+  setAttempt(attemptText());
 
   root.querySelector('[data-act="header"]')?.addEventListener('click', () => opts.headerButton.onClick());
 
@@ -129,7 +131,7 @@ export function mountProblem(root, opts) {
       if (part.type === 'choice') return `<div>${label}${renderText(part.choices[part.correct])}</div>`;
       return `<div>${label}${tex(answerTex(part))}${part.suffix ? ` ${esc(part.suffix)}` : ''}</div>`;
     });
-    return `<div class="solution"><b>Answer:</b> ${rows.join('')}</div>`;
+    return `<div class="solution"><b>Answer:</b><div class="sol-rows">${rows.join('')}</div></div>`;
   }
 
   const nextLabel = () => (typeof opts.nextLabel === 'function' ? opts.nextLabel() : opts.nextLabel) || 'Next Problem';
@@ -196,7 +198,7 @@ export function mountProblem(root, opts) {
     if (act === 'retry') {
       feedback.innerHTML = '';
       setLocked(false);
-      setAttempt(`Attempt ${attempts + 1}`);
+      setAttempt(attemptText());
       const firstWrong = partEls.findIndex((el) => el.classList.contains('wrong'));
       const target = firstWrong >= 0 ? partEls[firstWrong].querySelector('input') : null;
       target?.focus();

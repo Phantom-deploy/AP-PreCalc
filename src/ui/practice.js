@@ -79,7 +79,7 @@ export function renderPractice({ side, view }, params) {
       headerButton: { label: 'New Problem', onClick: newProblem },
       onResult(r) {
         if (r.revealed) return;
-        if (r.correct) recordAttempt(type.id, true, r.firstTry && !counted);
+        if (r.correct && r.attempts <= 2) recordAttempt(type.id, true, r.firstTry && !counted);
         else if (!counted) recordAttempt(type.id, false, false);
         counted = true;
         refreshScore();

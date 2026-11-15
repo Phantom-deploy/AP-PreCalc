@@ -83,14 +83,15 @@ export function plot(opts) {
     const idx = Math.round(x / xstep);
     out.push(`<line x1="${sx(x)}" y1="${pad.t}" x2="${sx(x)}" y2="${pad.t + ih}" stroke="#e6e6e6" stroke-width="1"/>`);
     if (idx % xEvery === 0 && Math.abs(x - axisX) > eps) {
-      labels.push(`<text x="${sx(x)}" y="${ay + 17}" font-size="13" text-anchor="middle" fill="#222222">${xTick(x)}</text>`);
+      const ly = opts.xLabelsBottom ? pad.t + ih + 17 : ay + 17;
+      labels.push(`<text x="${sx(x)}" y="${ly}" font-size="13" text-anchor="middle" fill="#222222">${xTick(x)}</text>`);
     }
   }
   for (let y = Math.ceil(y0 / ystep - eps) * ystep; y <= y1 + eps; y += ystep) {
     const idx = Math.round(y / ystep);
     out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#e6e6e6" stroke-width="1"/>`);
     if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin)) {
-      labels.push(`<text x="${ax - 5}" y="${sy(y) + 5}" font-size="13" text-anchor="end" fill="#222222">${yTick(y)}</text>`);
+      labels.push(`<text x="${ax - 9}" y="${sy(y) + 5}" font-size="13" text-anchor="end" fill="#222222">${yTick(y)}</text>`);
     }
   }
 
@@ -109,10 +110,16 @@ export function plot(opts) {
   const right = pad.l + iw + ext;
   const top = pad.t - ext;
   const bottom = pad.t + ih + ext;
-  out.push(`<line x1="${left + 6}" y1="${ay}" x2="${right - 6}" y2="${ay}" stroke="#000000" stroke-width="2"/>`);
-  out.push(`<line x1="${ax}" y1="${top + 6}" x2="${ax}" y2="${bottom - 6}" stroke="#000000" stroke-width="2"/>`);
-  out.push(arrow(right, ay, 'r'), arrow(left, ay, 'l'), arrow(ax, top, 'u'), arrow(ax, bottom, 'd'));
-  out.push(`<g font-family="${LABEL_FONT}">${labels.join('')}</g>`);
+  // an axis that starts at the edge of the window (no negative values) gets no arrow on that end
+  const leftOpen = x0 < 0;
+  const downOpen = y0 < 0;
+  const xa = leftOpen ? left + 6 : pad.l;
+  const yb = downOpen ? bottom - 6 : pad.t + ih;
+  out.push(`<line x1="${xa}" y1="${ay}" x2="${right - 6}" y2="${ay}" stroke="#000000" stroke-width="2"/>`);
+  out.push(`<line x1="${ax}" y1="${top + 6}" x2="${ax}" y2="${yb}" stroke="#000000" stroke-width="2"/>`);
+  out.push(arrow(right, ay, 'r'), arrow(ax, top, 'u'));
+  if (leftOpen) out.push(arrow(left, ay, 'l'));
+  if (downOpen) out.push(arrow(ax, bottom, 'd'));
   out.push(
     `<text x="${right + 5}" y="${ay + 5}" font-size="15" font-style="italic" font-family="${LABEL_FONT}" fill="#000000">${xname}</text>`,
     `<text x="${ax}" y="${top - 7}" font-size="15" font-style="italic" font-family="${LABEL_FONT}" text-anchor="middle" fill="#000000">${yname}</text>`,
@@ -157,6 +164,8 @@ export function plot(opts) {
       out.push(`<text x="${sx(p.x) + (p.dx ?? 9)}" y="${sy(p.y) + (p.dy ?? -9)}" font-size="15" font-weight="bold" font-family="${LABEL_FONT}" fill="#222222">${p.label}</text>`);
     }
   }
+  // tick labels last, with a white halo so curves and points never hide them
+  out.push(`<g font-family="${LABEL_FONT}" stroke="#ffffff" stroke-width="3" paint-order="stroke" stroke-linejoin="round">${labels.join('')}</g>`);
   out.push('</svg>');
   return `<div class="figure">${out.join('')}</div>`;
 }

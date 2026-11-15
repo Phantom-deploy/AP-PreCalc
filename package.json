@@ -7,7 +7,9 @@
   "scripts": {
     "start": "node scripts/serve.mjs 8080 .",
     "test": "node --test tests/",
-    "sample": "node scripts/sample.mjs"
+    "sample": "node scripts/sample.mjs",
+    "lint": "node scripts/check.mjs",
+    "build": "node scripts/check.mjs --build"
   },
   "license": "UNLICENSED"
 }

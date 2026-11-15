@@ -282,3 +282,22 @@ p { margin: 0 0 12px; }
   .dm-table th, .dm-table td { padding: 5px 9px; }
 }
 .unit-meter .progress { background: #ffffff; border: 1px solid #dce4ec; }
+
+/* DeltaMath problem screen conventions (from its public product image):
+   serif problem text in the same face as the math, centered problem and answer row. */
+.problem { font-family: KaTeX_Main, "Times New Roman", Times, serif; font-size: 19px; text-align: center; color: #222222; }
+.problem p { max-width: 720px; margin-left: auto; margin-right: auto; }
+.answer-area { text-align: center; }
+.part-row { justify-content: center; }
+.part-label { font-family: KaTeX_Main, "Times New Roman", Times, serif; font-size: 19px; }
+.preview, .keys { justify-content: center; }
+.choices { display: inline-block; text-align: left; min-width: min(520px, 100%); }
+.choice-label { font-family: KaTeX_Main, "Times New Roman", Times, serif; font-size: 18px; }
+.actions { justify-content: center; }
+.alert { text-align: left; }
+.alert .actions { justify-content: flex-start; }
+.daily-source, .toolbar { text-align: left; }
+@media (max-width: 760px) {
+  .problem { font-size: 17px; }
+  .part-row { align-items: center; }
+}

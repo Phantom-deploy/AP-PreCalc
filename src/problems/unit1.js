@@ -445,7 +445,7 @@ const tripGraph = {
     const pts = [[0, 0], [t1, d1], [t2, d1], [t3, d2], [t4, d2], [t5, 0]];
     const xmax = Math.ceil((t5 + 1) / 10) * 10;
     const fig = plot({
-      x: [0, xmax], y: [0, 3.5], xstep: 5, ystep: 0.5, xlabelEvery: 2, ylabelEvery: 2, w: 400, h: 300,
+      x: [0, xmax], y: [0, 3.5], xstep: 5, ystep: 0.5, xlabelEvery: 2, ylabelEvery: 2, w: 560, h: 380, padL: 44,
       paths: [{ pts }], xname: 't (minutes)', yname: 'd (miles)',
     });
     const intro = `${who} walks from home to ${stop1}, then to ${stop2}, and then returns home. The graph shows the distance from home, $d(t)$, in miles, $t$ minutes after leaving.\n\n${fig}\n\n`;

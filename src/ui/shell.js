@@ -23,13 +23,13 @@ export function ring(fraction, done, label = '') {
   if (done) {
     return `<span class="ring" aria-label="${esc(label || 'Complete')}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12.5l5 5L20 6.5" fill="none" stroke="#2e8540" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>`;
   }
-  const r = 9;
+  const r = 8.5;
   const c = 2 * Math.PI * r;
   const f = Math.max(0, Math.min(1, fraction));
   return (
     `<span class="ring" aria-label="${esc(label || `${Math.round(f * 100)} percent`)}"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true">` +
-    `<circle cx="12" cy="12" r="${r}" fill="none" stroke="#e5e7eb" stroke-width="3.5"/>` +
-    (f > 0 ? `<circle cx="12" cy="12" r="${r}" fill="none" stroke="#3940b0" stroke-width="3.5" stroke-dasharray="${(c * f).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 12 12)"/>` : '') +
+    `<circle class="trk" cx="12" cy="12" r="${r}" fill="none" stroke-width="4.5"/>` +
+    (f > 0 ? `<circle cx="12" cy="12" r="${r}" fill="none" stroke="#333dab" stroke-width="4.5" stroke-dasharray="${(c * f).toFixed(2)} ${c.toFixed(2)}" transform="rotate(-90 12 12)"/>` : '') +
     `</svg></span>`
   );
 }

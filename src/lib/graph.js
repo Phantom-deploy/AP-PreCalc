@@ -1,41 +1,67 @@
-// Minimal SVG graphing used by problems. Returns an SVG string.
+// SVG graphs in the DeltaMath style: light gray grid, black axes with arrowheads,
+// serif tick labels beside the axes, italic axis letters. Returns an SVG string.
 
 let uid = 0;
 
 const COLORS = { blue: '#1f5fa8', red: '#c0392b', green: '#2e7d32', gray: '#555555' };
+const LABEL_FONT = "Georgia, 'Times New Roman', serif";
 
 function niceLabel(v) {
-  return String(Math.round(v * 1000) / 1000).replace('-', '−');
+  return String(Math.round(v * 1000) / 1000);
+}
+
+function arrow(tx, ty, dir) {
+  // filled arrowhead with a concave back, pointing in direction dir (r, l, u, d)
+  const L = 12;
+  const Wd = 5;
+  const back = 8;
+  const pts = {
+    r: [[tx, ty], [tx - L, ty - Wd], [tx - back, ty], [tx - L, ty + Wd]],
+    l: [[tx, ty], [tx + L, ty - Wd], [tx + back, ty], [tx + L, ty + Wd]],
+    u: [[tx, ty], [tx - Wd, ty + L], [tx, ty + back], [tx + Wd, ty + L]],
+    d: [[tx, ty], [tx - Wd, ty - L], [tx, ty - back], [tx + Wd, ty - L]],
+  }[dir];
+  return `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(' ')).join('L')}Z" fill="#000000"/>`;
 }
 
 /*
  opts:
    x: [min, max], y: [min, max]
    xstep, ystep: grid spacing (default 1)
-   xlabelEvery, ylabelEvery: label every nth grid line (default 2)
+   xlabelEvery, ylabelEvery: label every nth grid line (default 1 for small ranges)
    curves: [{ f, from, to, color }]
    paths: [{ pts: [[x, y], ...], color }]
-   points: [{ x, y, open, label, color, dx, dy }]
-   vlines: [x], hlines: [y] (dashed)
+   points: [{ x, y, open, label, color, dx, dy, r }]
+   vlines: [x], hlines: [y] (dashed asymptotes)
    xname, yname: axis names
    xTick, yTick: functions that format tick labels
-   w, h: pixel size
+   w, h: pixel size of the grid area plus margins
+   padL: extra room on the left for long y labels
+   labelYOrigin: also label the y value where the x axis sits
 */
 export function plot(opts) {
   const id = `g${++uid}`;
   const [x0, x1] = opts.x;
   const [y0, y1] = opts.y;
-  const W = opts.w || 340;
-  const H = opts.h || 340;
-  const pad = { l: opts.padL || 34, r: 16, t: 16, b: 30 };
+  const xname = opts.xname ?? 'x';
+  const yname = opts.yname ?? 'y';
+  const W = opts.w || 480;
+  const H = opts.h || 480;
+  const ext = 20; // how far the axes run past the grid
+  const pad = {
+    l: Math.max(opts.padL || 0, 36),
+    r: ext + 12 + Math.max(10, xname.length * 8),
+    t: ext + 26,
+    b: 36,
+  };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
   const sx = (x) => pad.l + ((x - x0) / (x1 - x0)) * iw;
   const sy = (y) => pad.t + ((y1 - y) / (y1 - y0)) * ih;
   const xstep = opts.xstep || 1;
   const ystep = opts.ystep || 1;
-  const xEvery = opts.xlabelEvery || 2;
-  const yEvery = opts.ylabelEvery || 2;
+  const xEvery = opts.xlabelEvery || ((x1 - x0) / xstep <= 20 ? 1 : 2);
+  const yEvery = opts.ylabelEvery || ((y1 - y0) / ystep <= 20 ? 1 : 2);
   const xTick = opts.xTick || niceLabel;
   const yTick = opts.yTick || niceLabel;
   const out = [];
@@ -43,53 +69,56 @@ export function plot(opts) {
     `<svg class="graph" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="${opts.alt || 'Graph for this problem'}">`,
   );
   out.push(`<defs><clipPath id="${id}"><rect x="${pad.l}" y="${pad.t}" width="${iw}" height="${ih}"/></clipPath></defs>`);
-  out.push(`<rect x="${pad.l}" y="${pad.t}" width="${iw}" height="${ih}" fill="#ffffff" stroke="#bbbbbb" stroke-width="1"/>`);
+  out.push(`<rect x="${pad.l}" y="${pad.t}" width="${iw}" height="${ih}" fill="#ffffff" stroke="#e6e6e6" stroke-width="1"/>`);
 
-  // axis positions (pinned to the edge when zero is out of view)
+  // axes sit at zero, or along the edge when zero is out of view
   const axisX = Math.min(Math.max(0, x0), x1);
   const axisY = Math.min(Math.max(0, y0), y1);
-
+  const ax = sx(axisX);
+  const ay = sy(axisY);
   const eps = 1e-9;
-  let k = 0;
-  for (let x = Math.ceil(x0 / xstep - eps) * xstep; x <= x1 + eps; x += xstep, k++) {
+
+  const labels = [];
+  for (let x = Math.ceil(x0 / xstep - eps) * xstep; x <= x1 + eps; x += xstep) {
     const idx = Math.round(x / xstep);
-    out.push(`<line x1="${sx(x)}" y1="${pad.t}" x2="${sx(x)}" y2="${pad.t + ih}" stroke="#dddddd" stroke-width="1"/>`);
+    out.push(`<line x1="${sx(x)}" y1="${pad.t}" x2="${sx(x)}" y2="${pad.t + ih}" stroke="#e6e6e6" stroke-width="1"/>`);
     if (idx % xEvery === 0 && Math.abs(x - axisX) > eps) {
-      out.push(
-        `<text x="${sx(x)}" y="${Math.min(sy(axisY) + 14, H - 4)}" font-size="11" text-anchor="middle" fill="#333333">${xTick(x)}</text>`,
-      );
+      labels.push(`<text x="${sx(x)}" y="${ay + 17}" font-size="13" text-anchor="middle" fill="#222222">${xTick(x)}</text>`);
     }
   }
   for (let y = Math.ceil(y0 / ystep - eps) * ystep; y <= y1 + eps; y += ystep) {
     const idx = Math.round(y / ystep);
-    out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#dddddd" stroke-width="1"/>`);
-    if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin) && Math.abs(y - y1) > eps) {
-      out.push(
-        `<text x="${Math.max(sx(axisX) - 12, pad.l - 4)}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#333333">${yTick(y)}</text>`,
-      );
+    out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#e6e6e6" stroke-width="1"/>`);
+    if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin)) {
+      labels.push(`<text x="${ax - 5}" y="${sy(y) + 5}" font-size="13" text-anchor="end" fill="#222222">${yTick(y)}</text>`);
     }
   }
-  // axes
-  out.push(`<line x1="${pad.l}" y1="${sy(axisY)}" x2="${pad.l + iw}" y2="${sy(axisY)}" stroke="#222222" stroke-width="1.5"/>`);
-  out.push(`<line x1="${sx(axisX)}" y1="${pad.t}" x2="${sx(axisX)}" y2="${pad.t + ih}" stroke="#222222" stroke-width="1.5"/>`);
+
+  // asymptotes and curves, clipped to the grid
+  out.push(`<g clip-path="url(#${id})">`);
+  for (const v of opts.vlines || []) {
+    out.push(`<line x1="${sx(v)}" y1="${pad.t}" x2="${sx(v)}" y2="${pad.t + ih}" stroke="#d3a60c" stroke-width="2" stroke-dasharray="6 6"/>`);
+  }
+  for (const v of opts.hlines || []) {
+    out.push(`<line x1="${pad.l}" y1="${sy(v)}" x2="${pad.l + iw}" y2="${sy(v)}" stroke="#d3a60c" stroke-width="2" stroke-dasharray="6 6"/>`);
+  }
+  out.push('</g>');
+
+  // axes with arrowheads at both ends
+  const left = pad.l - ext;
+  const right = pad.l + iw + ext;
+  const top = pad.t - ext;
+  const bottom = pad.t + ih + ext;
+  out.push(`<line x1="${left + 6}" y1="${ay}" x2="${right - 6}" y2="${ay}" stroke="#000000" stroke-width="2"/>`);
+  out.push(`<line x1="${ax}" y1="${top + 6}" x2="${ax}" y2="${bottom - 6}" stroke="#000000" stroke-width="2"/>`);
+  out.push(arrow(right, ay, 'r'), arrow(left, ay, 'l'), arrow(ax, top, 'u'), arrow(ax, bottom, 'd'));
+  out.push(`<g font-family="${LABEL_FONT}">${labels.join('')}</g>`);
   out.push(
-    `<text x="${pad.l + iw - 4}" y="${sy(axisY) - 6}" font-size="12" font-style="italic" text-anchor="end" fill="#222222">${opts.xname ?? 'x'}</text>`,
-  );
-  out.push(
-    `<text x="${sx(axisX) + 7}" y="${pad.t + 12}" font-size="12" font-style="italic" fill="#222222">${opts.yname ?? 'y'}</text>`,
+    `<text x="${right + 5}" y="${ay + 5}" font-size="15" font-style="italic" font-family="${LABEL_FONT}" fill="#000000">${xname}</text>`,
+    `<text x="${ax}" y="${top - 7}" font-size="15" font-style="italic" font-family="${LABEL_FONT}" text-anchor="middle" fill="#000000">${yname}</text>`,
   );
 
   out.push(`<g clip-path="url(#${id})">`);
-  for (const v of opts.vlines || []) {
-    out.push(
-      `<line x1="${sx(v)}" y1="${pad.t}" x2="${sx(v)}" y2="${pad.t + ih}" stroke="${COLORS.red}" stroke-width="1.5" stroke-dasharray="6 4"/>`,
-    );
-  }
-  for (const v of opts.hlines || []) {
-    out.push(
-      `<line x1="${pad.l}" y1="${sy(v)}" x2="${pad.l + iw}" y2="${sy(v)}" stroke="${COLORS.red}" stroke-width="1.5" stroke-dasharray="6 4"/>`,
-    );
-  }
   const span = y1 - y0;
   for (const c of opts.curves || []) {
     const from = Math.max(c.from ?? x0, x0);
@@ -113,22 +142,19 @@ export function plot(opts) {
       pen = true;
       prevY = y;
     }
-    out.push(`<path d="${d}" fill="none" stroke="${COLORS[c.color] || c.color || COLORS.blue}" stroke-width="2.2" stroke-linejoin="round"/>`);
+    out.push(`<path d="${d}" fill="none" stroke="${COLORS[c.color] || c.color || COLORS.blue}" stroke-width="2.4" stroke-linejoin="round"/>`);
   }
   for (const p of opts.paths || []) {
     const d = p.pts.map(([x, y], i) => `${i ? 'L' : 'M'}${sx(x).toFixed(2)} ${sy(y).toFixed(2)}`).join('');
-    out.push(`<path d="${d}" fill="none" stroke="${COLORS[p.color] || p.color || COLORS.blue}" stroke-width="2.2" stroke-linejoin="round"/>`);
+    out.push(`<path d="${d}" fill="none" stroke="${COLORS[p.color] || p.color || COLORS.blue}" stroke-width="2.4" stroke-linejoin="round"/>`);
   }
   out.push('</g>');
   for (const p of opts.points || []) {
-    const col = COLORS[p.color] || p.color || COLORS.blue;
-    out.push(
-      `<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="${p.r || 4}" fill="${p.open ? '#ffffff' : col}" stroke="${col}" stroke-width="2"/>`,
-    );
+    const custom = COLORS[p.color] || p.color;
+    const fill = p.open ? '#ffffff' : custom || '#5481b5';
+    out.push(`<circle cx="${sx(p.x)}" cy="${sy(p.y)}" r="${p.r || 5}" fill="${fill}" stroke="${custom && !p.open ? custom : '#222222'}" stroke-width="${p.open ? 2 : 1}"/>`);
     if (p.label) {
-      out.push(
-        `<text x="${sx(p.x) + (p.dx ?? 8)}" y="${sy(p.y) + (p.dy ?? -8)}" font-size="13" font-weight="bold" fill="#222222">${p.label}</text>`,
-      );
+      out.push(`<text x="${sx(p.x) + (p.dx ?? 9)}" y="${sy(p.y) + (p.dy ?? -9)}" font-size="15" font-weight="bold" font-family="${LABEL_FONT}" fill="#222222">${p.label}</text>`);
     }
   }
   out.push('</svg>');

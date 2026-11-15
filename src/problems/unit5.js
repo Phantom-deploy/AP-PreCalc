@@ -1182,7 +1182,7 @@ const readSemiLog = {
     const line = (x) => c + m * x;
     const xmax = m === 0.5 ? 8 : 5;
     const fig = plot({
-      x: [0, xmax], y: [0, 6.5], w: 400, h: 320, padL: 62, labelYOrigin: true, xlabelEvery: 1, ylabelEvery: 1, yTick: pow10, yname: 'y (log scale)',
+      x: [0, xmax], y: [0, 6], w: 520, h: 420, padL: 78, labelYOrigin: true, xlabelEvery: 1, ylabelEvery: 1, yTick: pow10, yname: 'y (log scale)',
       curves: [{ f: line, from: 0, to: m < 0 ? c : Math.min(xmax, (6 - c) / m) }],
       points: [{ x: 0, y: c }],
     });

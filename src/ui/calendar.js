@@ -1,38 +1,39 @@
-// Calendar page: the course calendar, with links from each lesson to its practice problems.
+// Course calendar page with links from each lesson to its skills.
 
 import { COURSE, dayInfo, getLesson, addDays, fromISO, formatDate } from '../data/calendar.js';
 import { todayISO } from '../lib/clock.js';
+import { homeSidebar, wireSidebar } from './shell.js';
 
 function cell(iso, today) {
   const info = dayInfo(iso);
-  const classes = [];
-  let body = '';
+  const cls = [];
+  let body;
   if (info.kind === 'off') {
-    classes.push('off');
+    cls.push('off');
     body = info.off;
   } else if (info.lesson) {
-    const lesson = getLesson(info.lesson);
-    body = `<a href="#/lesson/${lesson.id}"><b>Lesson ${lesson.id}</b><br>${lesson.title}</a>`;
+    const l = getLesson(info.lesson);
+    body = `<a href="#/lesson/${l.id}"><b>Lesson ${l.id}</b><br>${l.title}</a>`;
   } else {
-    classes.push(info.kind === 'assessment' ? 'assess' : info.kind === 'review' ? 'review' : 'other');
+    cls.push(info.kind === 'assessment' ? 'assess' : 'review');
     body = info.label;
   }
-  if (iso === today) classes.push('today');
-  const events = (info.events || []).map((e) => `<span class="ev">${e}</span>`).join('');
-  return `<td class="${classes.join(' ')}"${iso === today ? ' aria-current="date"' : ''}><span class="d">${formatDate(iso, { short: true })}</span>${events}${body}</td>`;
+  if (iso === today) cls.push('today');
+  const ev = (info.events || []).map((e) => `<span class="ev">${e}</span>`).join('');
+  return `<td class="${cls.join(' ')}"${iso === today ? ' aria-current="date"' : ''}><span class="d">${formatDate(iso, { short: true })}</span>${ev}${body}</td>`;
 }
 
-export function renderCalendar(root) {
+export function renderCalendar({ side, view }) {
   const today = todayISO();
+  side.innerHTML = homeSidebar('calendar');
+  wireSidebar(side, () => renderCalendar({ side, view }));
   let rows = '';
-  // start from the Monday of the first week
   let monday = COURSE.start;
   while (fromISO(monday).getDay() !== 1) monday = addDays(monday, -1);
-  for (; monday <= COURSE.end; monday = addDays(monday, 7)) {
-    rows += `<tr>${[0, 1, 2, 3, 4].map((k) => cell(addDays(monday, k), today)).join('')}</tr>`;
-  }
-  root.innerHTML =
-    `<div class="page-head"><h1>Course Calendar</h1><p class="sub">${COURSE.name} &middot; ${COURSE.term} &middot; Subject to change, so check your class calendar too.</p></div>` +
-    `<div class="cal-wrap"><table class="cal"><thead><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody>${rows}</tbody></table></div>` +
-    `<p class="legend">Select a lesson to practice it. Daily problems skip weekends, holidays, and other days without a lesson when deciding which lessons count as "yesterday."</p>`;
+  for (; monday <= COURSE.end; monday = addDays(monday, 7)) rows += `<tr>${[0, 1, 2, 3, 4].map((k) => cell(addDays(monday, k), today)).join('')}</tr>`;
+  view.innerHTML =
+    `<div class="page-head"><p class="eyebrow">${COURSE.name} &middot; ${COURSE.term}</p><h1 class="serif page-title">Course Calendar</h1>` +
+    `<p class="head-note">Subject to change, so check your class calendar too. Select a lesson to practice it.</p></div>` +
+    `<div class="page-body"><div class="card cal-card"><div class="cal-wrap"><table class="cal"><thead><tr><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead><tbody>${rows}</tbody></table></div></div>` +
+    `<p class="legend"><span class="key-box off"></span> No school <span class="key-box assess"></span> Test or assessment <span class="key-box review"></span> Review <span class="key-box today"></span> Today</p></div>`;
 }

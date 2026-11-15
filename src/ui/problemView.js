@@ -1,13 +1,14 @@
-// Renders one problem with its answer inputs, checks answers, and shows feedback.
-// Used by both the practice page and the daily problems page.
+// Renders one problem in the DeltaMath layout: a "Question" section and a gray "Answer" panel.
+// Checks answers, shows feedback, one hint per miss, Try Again, Next Problem, and Show Answer.
 
 import { renderProblemText, renderText, tex } from '../lib/render.js';
 import { checkProblem, answerTex } from '../lib/check.js';
 import { parse, toTex } from '../lib/expr.js';
+import { esc } from './shell.js';
 
 const KEYS = {
   math: [['x²', '^2'], ['xⁿ', '^'], ['√', 'sqrt('], ['|x|', 'abs('], ['π', 'pi'], ['e', 'e'], ['ln', 'ln('], ['log', 'log('], ['logₙ', 'log_']],
-  interval: [['∞', 'inf'], ['-∞', '-inf'], ['∪', ' U '], ['[', '['], [']', ']'], ['(', '('], [')', ')']],
+  interval: [['[ , ]', '[ , ]'], ['[ , )', '[ , )'], ['( , ]', '( , ]'], ['( , )', '( , )'], ['−∞', '-inf'], ['∞', 'inf'], ['∪', ' U '], ['All Real Numbers', '(-inf, inf)']],
 };
 
 const HELP = {
@@ -16,18 +17,15 @@ const HELP = {
   point: 'Enter an ordered pair such as (2, -5).',
 };
 
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-}
-
 /*
   opts:
-    problem      the generated problem
-    solved       true when this problem was already answered correctly (daily page)
-    nextLabel    label for the button that moves on
-    onNext()     called when the student moves on
-    onResult({ correct, firstTry, attempts, revealed })  called once when the problem is finished
-                 (answered correctly, or the answer was revealed) and on each incorrect submission
+    problem        the generated problem
+    solved         already answered correctly earlier (daily page)
+    revealed       answer was already shown earlier (daily page)
+    nextLabel      string or function returning the label for the move-on button
+    onNext()       move on
+    onResult(r)    r = { correct, firstTry, attempts, revealed }
+    headerButton   { label, onClick } shown at the top right of the Question section
 */
 export function mountProblem(root, opts) {
   const { problem } = opts;
@@ -46,30 +44,42 @@ export function mountProblem(root, opts) {
             .join('')}</ul></div>`
         );
       }
-      const keyKind = part.type === 'interval' ? 'interval' : part.type === 'number' || part.type === 'expr' || part.type === 'custom' ? 'math' : null;
-      const keys = keyKind ? `<div class="keys" aria-label="Symbol shortcuts">${KEYS[keyKind].map(([lab, ins]) => `<button type="button" class="key" data-ins="${escapeHtml(ins)}" tabindex="-1">${lab}</button>`).join('')}</div>` : '';
-      const labelText = part.label ? renderText(part.label) : 'Answer:';
+      const keyKind = part.type === 'interval' ? 'interval' : ['number', 'expr', 'custom'].includes(part.type) ? 'math' : null;
+      const keys = keyKind
+        ? `<div class="keys" aria-label="Symbol buttons">${KEYS[keyKind].map(([lab, ins]) => `<button type="button" class="key" data-ins="${esc(ins)}" tabindex="-1">${lab}</button>`).join('')}</div>`
+        : '';
       return (
         `<div class="part" data-i="${i}"><div class="part-row">` +
-        `<label class="part-label" for="ans${i}">${labelText}</label>` +
-        `<input type="text" id="ans${i}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text">` +
-        (part.suffix ? `<span class="suffix">${escapeHtml(part.suffix)}</span>` : '') +
-        `</div>` +
-        `<div class="preview" aria-live="polite">${HELP[part.type] ? escapeHtml(HELP[part.type]) : ''}</div>${keys}</div>`
+        `<label class="part-label" for="ans${i}">${part.label ? renderText(part.label) : 'Answer:'}</label>` +
+        `<input type="text" id="ans${i}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false">` +
+        (part.suffix ? `<span class="suffix">${esc(part.suffix)}</span>` : '') +
+        `</div><div class="preview" aria-live="polite">${HELP[part.type] ? esc(HELP[part.type]) : ''}</div>${keys}</div>`
       );
     })
     .join('');
 
   root.innerHTML =
+    `<div class="q-head"><h2 class="serif">Question</h2>` +
+    (opts.headerButton ? `<button type="button" class="btn btn-outline" data-act="header">${esc(opts.headerButton.label)}</button>` : '') +
+    `</div>` +
     `<div class="problem">${renderProblemText(problem.prompt)}</div>` +
+    `<div class="answer-panel"><div class="a-head"><h3 class="serif">Answer</h3><span class="attempt"></span></div>` +
     `<form class="answer-area" novalidate>${partsHtml}` +
-    `<div class="actions"><button type="submit" class="btn btn-primary btn-lg">Submit Answer</button></div></form>` +
-    `<div class="feedback" aria-live="polite"></div>`;
+    `<div class="actions"><button type="submit" class="btn btn-primary">Submit Answer</button></div></form>` +
+    `<div class="feedback" aria-live="polite"></div></div>`;
 
   const form = root.querySelector('form');
   const feedback = root.querySelector('.feedback');
+  const attemptEl = root.querySelector('.attempt');
   const submitBtn = form.querySelector('button[type="submit"]');
   const partEls = [...root.querySelectorAll('.part')];
+
+  const setAttempt = (text) => {
+    attemptEl.textContent = text;
+  };
+  setAttempt('Attempt 1');
+
+  root.querySelector('[data-act="header"]')?.addEventListener('click', () => opts.headerButton.onClick());
 
   const inputOf = (i) => partEls[i].querySelector('input[type="text"]');
   const readInputs = () =>
@@ -83,9 +93,9 @@ export function mountProblem(root, opts) {
 
   function updatePreview(i) {
     const part = problem.parts[i];
+    if (!['number', 'expr', 'custom'].includes(part.type)) return;
     const box = partEls[i].querySelector('.preview');
     const raw = inputOf(i).value.trim();
-    if (!['number', 'expr', 'custom'].includes(part.type)) return;
     if (!raw) {
       box.textContent = '';
       return;
@@ -117,20 +127,31 @@ export function mountProblem(root, opts) {
     const rows = problem.parts.map((part) => {
       const label = part.label ? `${renderText(part.label)} ` : '';
       if (part.type === 'choice') return `<div>${label}${renderText(part.choices[part.correct])}</div>`;
-      return `<div>${label}${tex(answerTex(part))}${part.suffix ? ` ${escapeHtml(part.suffix)}` : ''}</div>`;
+      return `<div>${label}${tex(answerTex(part))}${part.suffix ? ` ${esc(part.suffix)}` : ''}</div>`;
     });
     return `<div class="solution"><b>Answer:</b> ${rows.join('')}</div>`;
   }
 
-  const nextButton = () => `<button type="button" class="btn btn-success" data-act="next">${escapeHtml((typeof opts.nextLabel === 'function' ? opts.nextLabel() : opts.nextLabel) || 'Next Problem')}</button>`;
+  const nextLabel = () => (typeof opts.nextLabel === 'function' ? opts.nextLabel() : opts.nextLabel) || 'Next Problem';
+  const nextButton = () => `<button type="button" class="btn btn-primary" data-act="next">${esc(nextLabel())}</button>`;
 
   function showCorrect(already) {
     setLocked(true);
+    setAttempt(already ? 'Solved earlier today' : `Solved in ${attempts} attempt${attempts === 1 ? '' : 's'}`);
     feedback.innerHTML =
       `<div class="alert alert-ok" role="status"><h3>${already ? 'Already solved' : 'Correct!'}</h3>` +
       `<p>${already ? 'You answered this one correctly earlier today.' : attempts <= 1 ? 'Nice work. You got it on the first try.' : 'You got it. Persistence pays off.'}</p>` +
       `<div class="actions">${opts.onNext ? nextButton() : ''}</div></div>`;
-    feedback.querySelector('[data-act="next"]')?.focus();
+    feedback.querySelector('[data-act="next"]')?.focus({ preventScroll: true });
+  }
+
+  function showRevealed(earlier) {
+    finished = true;
+    setLocked(true);
+    setAttempt('Answer shown');
+    feedback.innerHTML =
+      `<div class="alert alert-info" role="status"><h3>Answer shown</h3>${earlier ? '<p>You chose to see the answer for this problem earlier today.</p>' : ''}${solutionHtml()}` +
+      `<div class="actions">${opts.onNext ? nextButton() : ''}</div></div>`;
   }
 
   function showIncorrect(msg) {
@@ -140,10 +161,10 @@ export function mountProblem(root, opts) {
       (msg ? `<p>${renderText(msg)}</p>` : '') +
       `<div class="hint"><b>Hint:</b> ${renderText(problem.hint)}</div>` +
       `<div class="actions"><button type="button" class="btn btn-primary" data-act="retry">Try Again</button>` +
-      `${opts.onNext ? nextButton() : ''}` +
-      (wrongCount >= 2 ? `<button type="button" class="btn" data-act="reveal">Show Answer</button>` : '') +
+      (opts.onNext ? `<button type="button" class="btn btn-outline" data-act="next">${esc(nextLabel())}</button>` : '') +
+      (wrongCount >= 2 ? `<button type="button" class="btn btn-outline" data-act="reveal">Show Answer</button>` : '') +
       `</div></div>`;
-    feedback.querySelector('[data-act="retry"]').focus();
+    feedback.querySelector('[data-act="retry"]').focus({ preventScroll: true });
   }
 
   form.addEventListener('submit', (ev) => {
@@ -163,7 +184,7 @@ export function mountProblem(root, opts) {
       showCorrect(false);
     } else {
       wrongCount++;
-      opts.onResult?.({ correct: false, firstTry: false, attempts, revealed: false, final: false });
+      opts.onResult?.({ correct: false, firstTry: false, attempts, revealed: false });
       showIncorrect(result.msg);
     }
   });
@@ -175,25 +196,21 @@ export function mountProblem(root, opts) {
     if (act === 'retry') {
       feedback.innerHTML = '';
       setLocked(false);
+      setAttempt(`Attempt ${attempts + 1}`);
       const firstWrong = partEls.findIndex((el) => el.classList.contains('wrong'));
       const target = firstWrong >= 0 ? partEls[firstWrong].querySelector('input') : null;
       target?.focus();
       if (target && target.type === 'text') target.select();
     }
     if (act === 'reveal') {
-      finished = true;
-      opts.onResult?.({ correct: false, firstTry: false, attempts, revealed: true, final: true });
-      feedback.innerHTML =
-        `<div class="alert alert-info" role="status"><h3>Answer shown</h3>${solutionHtml()}` +
-        `<div class="actions">${opts.onNext ? nextButton() : ''}</div></div>`;
+      opts.onResult?.({ correct: false, firstTry: false, attempts, revealed: true });
+      showRevealed(false);
     }
   });
 
   form.addEventListener('input', (ev) => {
     const el = ev.target.closest('.part');
-    if (!el) return;
-    const i = Number(el.dataset.i);
-    if (ev.target.type === 'text') updatePreview(i);
+    if (el && ev.target.type === 'text') updatePreview(Number(el.dataset.i));
   });
 
   form.addEventListener('change', (ev) => {
@@ -211,24 +228,19 @@ export function mountProblem(root, opts) {
     const start = input.selectionStart ?? input.value.length;
     const end = input.selectionEnd ?? input.value.length;
     input.value = input.value.slice(0, start) + ins + input.value.slice(end);
-    const pos = start + ins.length;
+    // interval templates put the cursor inside the brackets
+    const pos = ins.includes(' , ') ? start + 1 : start + ins.length;
     input.focus();
     input.setSelectionRange(pos, pos);
     updatePreview(Number(key.closest('.part').dataset.i));
   });
 
-  if (opts.revealed) {
-    finished = true;
-    setLocked(true);
-    feedback.innerHTML =
-      `<div class="alert alert-info" role="status"><h3>Answer shown</h3><p>You chose to see the answer for this problem earlier today.</p>${solutionHtml()}` +
-      `<div class="actions">${opts.onNext ? nextButton() : ''}</div></div>`;
-  } else if (opts.solved) {
+  if (opts.revealed) showRevealed(true);
+  else if (opts.solved) {
     finished = true;
     showCorrect(true);
-  } else if (!opts.noFocus) {
+  } else {
     const first = root.querySelector('.part input[type="text"]');
-    // avoid popping up the keyboard on phones
-    if (first && globalThis.matchMedia?.('(min-width: 761px)').matches) first.focus({ preventScroll: true });
+    if (first && globalThis.matchMedia?.('(min-width: 901px)').matches) first.focus({ preventScroll: true });
   }
 }

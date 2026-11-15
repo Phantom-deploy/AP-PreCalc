@@ -1,15 +1,17 @@
-// Practice page for one problem type: unlimited generated problems at a chosen difficulty.
+// Practice page for one skill: unlimited generated problems at a chosen difficulty.
 
-import { getLesson, UNITS } from '../data/calendar.js';
+import { getLesson, UNITS, formatDate } from '../data/calendar.js';
 import { getType, typesOfLesson, generate, LEVELS } from '../problems/index.js';
-import { getSkill, recordAttempt, getPrefs, setPref, GOAL } from '../lib/store.js';
+import { getSkill, skillProgress, recordAttempt, getPrefs, setPref, GOAL } from '../lib/store.js';
 import { randomSeed } from '../lib/rng.js';
 import { mountProblem } from './problemView.js';
+import { activitySidebar, wireSidebar, ring, segbar, esc } from './shell.js';
 
-export function renderPractice(root, params) {
+export function renderPractice({ side, view }, params) {
   const type = getType(params.typeId);
   if (!type) {
-    root.innerHTML = `<div class="alert alert-warn">That problem type does not exist. <a href="#/">Back to all units</a></div>`;
+    side.innerHTML = '';
+    view.innerHTML = `<div class="page-body"><div class="alert alert-warn">That skill does not exist. <a href="#/">Back to Home</a></div></div>`;
     return;
   }
   const lesson = getLesson(type.lesson);
@@ -18,41 +20,44 @@ export function renderPractice(root, params) {
   let level = Math.min(2, Math.max(0, Number(getPrefs().level) || 0));
   let lastSeed = null;
 
-  const sideItems = () =>
-    siblings
-      .map((t) => {
+  function drawSide() {
+    const p = siblings.reduce((a, t) => a + skillProgress(t.id), 0) / siblings.length;
+    side.innerHTML = activitySidebar({
+      title: `${lesson.id} ${lesson.title}`,
+      sub: `Unit ${unit.id} &middot; Taught ${formatDate(lesson.date, { weekdayShort: true })}`,
+      progressLabel: `Lesson progress: <b>${Math.round(p * 100)}%</b>`,
+      progress: p,
+      items: siblings.map((t) => {
         const s = getSkill(t.id);
-        const done = s.correct >= GOAL;
-        return `<li><a href="#/practice/${t.id}" class="${t.id === type.id ? 'active' : ''}"${t.id === type.id ? ' aria-current="page"' : ''}>${t.title}<br><span class="mini">${done ? '<span class="check">Complete</span>' : `Score: ${Math.min(s.correct, GOAL)}/${GOAL}`}</span></a></li>`;
-      })
-      .join('');
+        return { href: `#/practice/${t.id}`, active: t.id === type.id, icon: ring(skillProgress(t.id), s.correct >= GOAL), html: esc(t.title) };
+      }),
+    });
+    wireSidebar(side, () => renderPractice({ side, view }, params));
+  }
 
-  root.innerHTML =
-    `<div class="crumbs"><a href="#/">All Units</a> &rsaquo; <a href="#/unit/${unit.id}">Unit ${unit.id}: ${unit.title}</a> &rsaquo; Lesson ${lesson.id}</div>` +
-    `<div class="practice">` +
-    `<aside class="sidebar"><div class="sidebar-head">${lesson.id} ${lesson.title}</div><ul class="side-list">${sideItems()}</ul>` +
-    `<div class="side-foot"><a href="#/unit/${unit.id}">Back to Unit ${unit.id}</a></div></aside>` +
-    `<section class="panel"><div class="panel-head"><h2>${type.title}</h2><div class="scorebox" aria-live="polite"></div></div>` +
-    `<div class="panel-body"><div class="toolbar"><div><span class="label" id="difflabel">Difficulty:</span>` +
-    `<span class="btn-group" role="group" aria-labelledby="difflabel">${LEVELS.map((name, i) => `<button type="button" class="btn btn-sm" data-level="${i}">${name}</button>`).join('')}</span></div>` +
-    `<button type="button" class="btn btn-sm" data-act="skip">New Problem</button></div>` +
-    `<div class="problem-slot"></div></div></section></div>`;
+  view.innerHTML =
+    `<div class="page-body narrow-top"><p class="crumbs"><a href="#/unit/${unit.id}">Unit ${unit.id}: ${esc(unit.title)}</a> &rsaquo; Lesson ${lesson.id}</p>` +
+    `<h1 class="serif page-title">${esc(type.title)}</h1>` +
+    `<div class="card score-card"><div class="score-line"><span><b>Score:</b> <span data-score></span></span><span><b>Streak:</b> <span data-streak></span></span>` +
+    `<span class="diff"><span class="diff-label" id="difflabel">Difficulty:</span><span class="seg" role="group" aria-labelledby="difflabel">${LEVELS.map((n, i) => `<button type="button" data-level="${i}">${n}</button>`).join('')}</span></span></div>` +
+    `<div data-segbar></div></div>` +
+    `<div class="card q-card"></div></div>`;
 
-  const slot = root.querySelector('.problem-slot');
-  const scorebox = root.querySelector('.scorebox');
-  const sideList = root.querySelector('.side-list');
+  const slot = view.querySelector('.q-card');
 
   function refreshScore() {
     const s = getSkill(type.id);
-    scorebox.innerHTML = `Score: <b>${Math.min(s.correct, GOAL)}/${GOAL}</b>${s.correct >= GOAL ? ' <span class="check">Complete</span>' : ''} &nbsp; Streak: <b>${s.streak}</b>`;
-    sideList.innerHTML = sideItems();
+    view.querySelector('[data-score]').textContent = `${Math.min(s.correct, GOAL)}/${GOAL}${s.correct >= GOAL ? ' (complete)' : ''}`;
+    view.querySelector('[data-streak]').textContent = String(s.streak);
+    view.querySelector('[data-segbar]').innerHTML = segbar(Math.min(s.correct, GOAL), GOAL, 'Score');
+    drawSide();
   }
 
-  function refreshLevelButtons() {
-    root.querySelectorAll('[data-level]').forEach((b) => {
+  function refreshLevels() {
+    view.querySelectorAll('[data-level]').forEach((b) => {
       const on = Number(b.dataset.level) === level;
-      b.classList.toggle('active', on);
-      b.setAttribute('aria-pressed', on);
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', String(on));
     });
   }
 
@@ -64,7 +69,6 @@ export function renderPractice(root, params) {
     try {
       problem = generate(type.id, level, seed);
     } catch (err) {
-      // extremely unlikely, but never leave the student with a blank page
       console.error(err);
       problem = generate(type.id, level, (seed + 7) >>> 0);
     }
@@ -72,37 +76,27 @@ export function renderPractice(root, params) {
     mountProblem(slot, {
       problem,
       onNext: newProblem,
-      onResult(result) {
-        // each generated problem affects the score once: when solved, or on the first miss
-        if (result.correct) {
-          if (!counted) recordAttempt(type.id, true, result.firstTry);
-          else recordSolvedAfterMiss();
-          counted = true;
-        } else if (!counted) {
-          recordAttempt(type.id, false, false);
-          counted = true;
-        }
+      headerButton: { label: 'New Problem', onClick: newProblem },
+      onResult(r) {
+        if (r.revealed) return;
+        if (r.correct) recordAttempt(type.id, true, r.firstTry && !counted);
+        else if (!counted) recordAttempt(type.id, false, false);
+        counted = true;
         refreshScore();
       },
     });
   }
 
-  // A problem that was missed first and then solved on a retry still earns credit toward the goal.
-  function recordSolvedAfterMiss() {
-    recordAttempt(type.id, true, false);
-  }
-
-  root.querySelector('.btn-group').addEventListener('click', (ev) => {
-    const btn = ev.target.closest('[data-level]');
-    if (!btn) return;
-    level = Number(btn.dataset.level);
+  view.querySelector('.seg').addEventListener('click', (ev) => {
+    const b = ev.target.closest('[data-level]');
+    if (!b) return;
+    level = Number(b.dataset.level);
     setPref('level', level);
-    refreshLevelButtons();
+    refreshLevels();
     newProblem();
   });
-  root.querySelector('[data-act="skip"]').addEventListener('click', newProblem);
 
-  refreshLevelButtons();
+  refreshLevels();
   refreshScore();
   newProblem();
 }

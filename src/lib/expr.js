@@ -346,6 +346,7 @@ export function toTex(n) {
       return '-' + (['add', 'sub', 'neg'].includes(n.a.k) ? paren(inner) : inner);
     }
     case 'add': {
+      if (n.b.k === 'num' && n.b.v === 0) return toTex(n.a);
       const r = toTex(n.b);
       return `${toTex(n.a)}+${n.b.k === 'neg' ? paren(r) : r}`;
     }
@@ -354,6 +355,11 @@ export function toTex(n) {
       return `${toTex(n.a)}-${['add', 'sub', 'neg'].includes(n.b.k) ? paren(r) : r}`;
     }
     case 'mul': {
+      if (n.a.k === 'num' && n.a.v === 1 && n.b.k !== 'num') return toTex(n.b);
+      if (n.a.k === 'neg' && n.a.a.k === 'num' && n.a.a.v === 1 && n.b.k !== 'num') {
+        const r1 = toTex(n.b);
+        return '-' + (['add', 'sub', 'neg'].includes(n.b.k) ? paren(r1) : r1);
+      }
       const l = toTex(n.a);
       const r = toTex(n.b);
       const L = ['add', 'sub'].includes(n.a.k) ? paren(l) : l;

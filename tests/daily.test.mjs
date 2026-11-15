@@ -80,6 +80,7 @@ test('daily plan is stable within a day, changes across days, and always has 3 v
     assert.equal(a.slots.length, 3, day);
     assert.deepEqual(a, b, `${day} not stable`);
     assert.equal(a.slots[2].level, 0, `${day}: preview should be easy`);
+    assert.equal(new Set(a.slots.map((s) => s.typeId)).size, 3, `${day}: repeated problem type`);
     for (const s of a.slots) {
       assert.ok(getType(s.typeId), `${day}: bad type`);
       assert.equal(getType(s.typeId).lesson, s.lessonId);

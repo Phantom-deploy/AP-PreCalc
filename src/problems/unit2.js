@@ -389,7 +389,7 @@ const complexZeros = {
     const givens = [z(a, b)];
     if (k === 2) givens.push(z(rng.intExcept(-6, 6, [a, 0]), -rng.int(1, 6)));
     return {
-      prompt: `A polynomial function $p$ of degree $${n}$ has <b>real coefficients</b>. ${k === 1 ? 'One of its zeros is' : 'Two of its zeros are'} ${givens.join(' and ')}.\n\nCounting multiplicities, how many real zeros does $p$ have?`,
+      prompt: `A polynomial function $p$ of degree $${n}$ has <b>real coefficients</b>. ${k === 1 ? 'One of its zeros is' : 'Two of its zeros are'} ${givens.join(' and ')}, and every zero not determined by that information is real.\n\nCounting multiplicities, how many real zeros does $p$ have?`,
       parts: [num(n - 2 * k)],
       hint: 'Each non-real zero brings its conjugate along. Count all the non-real zeros, then compare with the degree.',
     };

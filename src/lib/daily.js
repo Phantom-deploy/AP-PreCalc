@@ -13,7 +13,9 @@ import { typesOfLesson } from '../problems/index.js';
 import { hashString, makeRng } from './rng.js';
 
 function pickType(lessonId, rng, avoid) {
-  const types = typesOfLesson(lessonId).filter((t) => t.id !== avoid);
+  const used = [].concat(avoid || []);
+  let types = typesOfLesson(lessonId).filter((t) => !used.includes(t.id));
+  if (!types.length) types = typesOfLesson(lessonId);
   return rng.pick(types).id;
 }
 
@@ -31,7 +33,7 @@ export function dailyPlan(iso) {
   const reviewSlot = (slot, entry, label) => {
     const rng = makeRng(seedOf(`${slot}|type`));
     const lesson = getLesson(entry.lesson);
-    const avoid = slots.find((s) => s.lessonId === entry.lesson)?.typeId;
+    const avoid = slots.map((s) => s.typeId);
     return {
       role: slot,
       lessonId: lesson.id,
@@ -67,7 +69,7 @@ export function dailyPlan(iso) {
     return {
       role: 'today',
       lessonId,
-      typeId: typesOfLesson(lessonId)[0].id,
+      typeId: (typesOfLesson(lessonId).find((t) => !slots.some((s) => s.typeId === t.id)) || typesOfLesson(lessonId)[0]).id,
       level: 0,
       seed: seedOf('today'),
       heading,
@@ -87,7 +89,7 @@ export function dailyPlan(iso) {
     slots.push({
       role: 'today',
       lessonId: lesson.id,
-      typeId: pickType(lesson.id, rng),
+      typeId: pickType(lesson.id, rng, slots.map((s) => s.typeId)),
       level: 0,
       seed: seedOf('today'),
       heading: 'Warm-up for today',
@@ -105,7 +107,7 @@ export function dailyPlan(iso) {
       slots.push({
         role: 'today',
         lessonId: lesson.id,
-        typeId: pickType(lesson.id, rng),
+        typeId: pickType(lesson.id, rng, slots.map((s) => s.typeId)),
         level: 0,
         seed: seedOf('today'),
         heading: 'Course review',

@@ -52,37 +52,39 @@ export function renderDaily(root, params = {}) {
     const problem = generate(s.typeId, s.level, s.seed);
     const nextOpen = () => {
       const r = record();
-      for (let k = 1; k <= 3; k++) if (!r.solved[(i + k) % 3]) return (i + k) % 3;
+      const done = (j) => r.solved[j] || (r.revealed || [])[j];
+      for (let k = 1; k <= 3; k++) if (!done((i + k) % 3)) return (i + k) % 3;
       return -1;
     };
-    const upcoming = nextOpen();
+    const label = () => {
+      const target = nextOpen();
+      return target === -1 || target === i ? 'Back to Home' : `Go to Problem ${target + 1}`;
+    };
     mountProblem(slotEl, {
       problem,
       solved: rec.solved[i],
-      nextLabel: upcoming === -1 || (upcoming === i && rec.solved[i]) ? 'Back to Home' : `Go to Problem ${upcoming + 1}`,
+      revealed: !rec.solved[i] && (rec.revealed || [])[i],
+      nextLabel: label,
       onNext() {
         const target = nextOpen();
-        if (target === -1 || target === i) {
-          if (record().solved.every(Boolean)) location.hash = '#/';
-          else show(target === -1 ? i : target);
-        } else show(target);
+        if (target === -1 || target === i) location.hash = '#/';
+        else show(target);
       },
       onResult(result) {
         const r = record();
-        const updated = { solved: r.solved.slice(), tries: r.tries.slice() };
-        updated.tries[i] += 1;
-        if (result.correct) {
-          updated.solved[i] = true;
-          recordAttempt(s.typeId, true, result.firstTry);
+        const updated = { solved: r.solved.slice(), tries: r.tries.slice(), revealed: (r.revealed || [false, false, false]).slice() };
+        const firstTry = result.firstTry && r.tries[i] === 0;
+        if (result.revealed) {
+          updated.revealed[i] = true;
+        } else {
+          updated.tries[i] += 1;
+          if (result.correct) {
+            updated.solved[i] = true;
+            recordAttempt(s.typeId, true, firstTry);
+          }
         }
         setDaily(date, updated);
         drawTabs();
-        // refresh the label of the next button now that the record changed
-        if (result.correct) {
-          const btn = slotEl.querySelector('[data-act="next"]');
-          const target = nextOpen();
-          if (btn) btn.textContent = target === -1 ? 'Back to Home' : `Go to Problem ${target + 1}`;
-        }
       },
     });
   }

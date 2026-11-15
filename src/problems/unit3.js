@@ -200,7 +200,7 @@ const parentProperties = {
       ['linear', 'quadratic', 'abs', 'sqrt', 'cubic', 'recip', 'exp'],
       Object.keys(PARENTS),
     ];
-    const pool = pools[level];
+    const pool = pools[Math.max(level, 1)];
     const key = level === 2 ? rng.pick(['cubic', 'cbrt', 'recipSq', 'recip', 'exp', 'quadratic']) : rng.pick(pool);
     const rivals = { cubic: ['cbrt', 'linear', 'recip'], cbrt: ['cubic', 'sqrt', 'linear'], recipSq: ['recip', 'quadratic', 'abs'], recip: ['recipSq', 'cubic', 'exp'], exp: ['recip', 'recipSq', 'sqrt'], quadratic: ['abs', 'recipSq', 'cubic'] };
     const wrongs = [...(rivals[key] || []).filter((k) => pool.includes(k)), ...rng.shuffle(pool.filter((k) => k !== key))];

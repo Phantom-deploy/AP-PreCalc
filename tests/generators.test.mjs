@@ -46,6 +46,9 @@ for (const type of TYPES) {
         assert.ok(!/[—–]/.test(all), `${where}: contains a dash character`);
         const bad = all.match(/.{0,40}(NaN|undefined|Infinity|\[object).{0,40}/);
         assert.ok(!bad, `${where}: bad text: ${bad && bad[0]}`);
+        const texOnly = all.replace(/<svg.*?<\/svg>/gs, '');
+        const ugly = texOnly.match(/.{0,25}((?<![\d.,])1(?=(?!st)[a-z]|\\(sqrt|log|ln|left))|[+-]0(?![\d.])|\^\{1\}|\+-|--).{0,25}/);
+        assert.ok(!ugly, `${where}: unsimplified math: ${ugly && ugly[0]}`);
         assert.ok(!/\d\.\d{7,}/.test(all.replace(/<svg.*?<\/svg>/gs, '')), `${where}: long decimal in text`);
         assert.ok(p.hint && p.hint.length > 20 && p.hint.length < 260, `${where}: hint length ${p.hint && p.hint.length}`);
         try {

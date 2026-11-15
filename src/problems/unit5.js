@@ -374,7 +374,7 @@ const evaluateLogs = {
         tex = `\\log\\left(${(10 ** -k).toFixed(k)}\\right)`;
         part = num(-k);
       } else {
-        tex = `\\ln\\left(\\frac{1}{e^{${k}}}\\right)`;
+        tex = k === 1 ? '\\ln\\left(\\frac{1}{e}\\right)' : `\\ln\\left(\\frac{1}{e^{${k}}}\\right)`;
         part = num(-k);
       }
     } else {
@@ -1124,7 +1124,7 @@ const semiLogConcepts = {
       };
     }
     const m = rng.pick([2, 3, 4]);
-    const c = rng.int(1, 3);
+    const c = rng.int(2, 5);
     return {
       prompt: `On a semi-log plot, a data set follows the line $\\ln(y)=${m}x+${c}$.\n\nWhich equation gives $y$ as a function of $x$?`,
       parts: [mc(rng, `$y=e^{${c}}\\cdot\\left(e^{${m}}\\right)^{x}$`, [`$y=${m}x+e^{${c}}$`, `$y=e^{${m}}\\cdot\\left(e^{${c}}\\right)^{x}$`, `$y=\\ln(${m}x+${c})$`, `$y=${c}\\cdot ${m}^{x}$`])],
@@ -1142,7 +1142,7 @@ const linearize = {
       const a = rng.int(2, 9);
       const k = rng.pick(['0.3', '0.5', '2', '-0.4', '1.5', '-1']);
       return {
-        prompt: `Data are modeled by $y=${a}\\cdot 10^{${k}x}$. On a semi-log plot of $\\log(y)$ versus $x$, the data form a line.\n\nWhat is the slope of that line?`,
+        prompt: `Data are modeled by $y=${a}\\cdot 10^{${k === '-1' ? '-' : k}x}$. On a semi-log plot of $\\log(y)$ versus $x$, the data form a line.\n\nWhat is the slope of that line?`,
         parts: [num(Number(k), { label: 'Slope $=$' })],
         hint: 'Take the common logarithm of both sides of the model and use the product property. Which part of the result multiplies $x$?',
       };
@@ -1163,7 +1163,7 @@ const linearize = {
     const m = rng.pick([0.5, 1, 2, -1, 0.25]);
     const B = 10 ** m;
     return {
-      prompt: `On a semi-log plot, a data set follows the line $\\log(y)=${m}x+${c}$. The data can be modeled by $y=A\\cdot B^{x}$.\n\nFind $A$ and $B$. Round to three decimal places if needed.`,
+      prompt: `On a semi-log plot, a data set follows the line $\\log(y)=${m === 1 ? '' : m === -1 ? '-' : m}x+${c}$. The data can be modeled by $y=A\\cdot B^{x}$.\n\nFind $A$ and $B$. Round to three decimal places if needed.`,
       parts: [num(10 ** c, { label: '$A=$' }), { type: 'number', value: B, ans: `10^(${m})`, tol: 0.00051 * Math.max(1, B), label: '$B=$' }],
       hint: 'Make both sides exponents of 10 to undo the logarithm. Then split the exponent: the constant part gives $A$ and the part with $x$ gives $B$.',
     };
@@ -1182,7 +1182,7 @@ const readSemiLog = {
     const line = (x) => c + m * x;
     const xmax = m === 0.5 ? 8 : 5;
     const fig = plot({
-      x: [0, xmax], y: [0, 6], w: 380, h: 320, xlabelEvery: 1, ylabelEvery: 1, yTick: pow10, yname: 'y (log scale)',
+      x: [0, xmax], y: [0, 6.5], w: 400, h: 320, padL: 62, labelYOrigin: true, xlabelEvery: 1, ylabelEvery: 1, yTick: pow10, yname: 'y (log scale)',
       curves: [{ f: line, from: 0, to: m < 0 ? c : Math.min(xmax, (6 - c) / m) }],
       points: [{ x: 0, y: c }],
     });

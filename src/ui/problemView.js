@@ -122,7 +122,7 @@ export function mountProblem(root, opts) {
     return `<div class="solution"><b>Answer:</b> ${rows.join('')}</div>`;
   }
 
-  const nextButton = () => `<button type="button" class="btn btn-success" data-act="next">${escapeHtml(opts.nextLabel || 'Next Problem')}</button>`;
+  const nextButton = () => `<button type="button" class="btn btn-success" data-act="next">${escapeHtml((typeof opts.nextLabel === 'function' ? opts.nextLabel() : opts.nextLabel) || 'Next Problem')}</button>`;
 
   function showCorrect(already) {
     setLocked(true);
@@ -217,7 +217,13 @@ export function mountProblem(root, opts) {
     updatePreview(Number(key.closest('.part').dataset.i));
   });
 
-  if (opts.solved) {
+  if (opts.revealed) {
+    finished = true;
+    setLocked(true);
+    feedback.innerHTML =
+      `<div class="alert alert-info" role="status"><h3>Answer shown</h3><p>You chose to see the answer for this problem earlier today.</p>${solutionHtml()}` +
+      `<div class="actions">${opts.onNext ? nextButton() : ''}</div></div>`;
+  } else if (opts.solved) {
     finished = true;
     showCorrect(true);
   } else if (!opts.noFocus) {

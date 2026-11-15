@@ -296,7 +296,7 @@ const linearVsExponential = {
   title: 'Linear or Exponential?',
   gen(rng, level) {
     const options = ['Linear', 'Exponential', 'Neither'];
-    if (level === 2) {
+    if (level === 1) {
       const p = rng.int(2, 9);
       const amt = rng.int(2, 9) * 10;
       const [text, idx] = rng.pick([
@@ -320,7 +320,20 @@ const linearVsExponential = {
     const x0 = rng.int(0, 3);
     const xs = [0, 1, 2, 3, 4].map((i) => x0 + i * h);
     let ys;
-    if (kind === 0) {
+    if (level === 2) {
+      if (kind === 0) {
+        const m = rng.pick([-2.5, -1.5, 0.5, 1.5, 2.5, 3.5]);
+        const b = rng.int(10, 40);
+        ys = xs.map((_, i) => b + m * i);
+      } else if (kind === 1) {
+        const [b, a] = rng.pick([[1.5, 16 * rng.int(1, 3)], [0.8, 625], [1.2, 625], [0.5, 16 * rng.int(1, 5)], [2.5, 16]]);
+        ys = xs.map((_, i) => Math.round(a * b ** i * 1e6) / 1e6);
+      } else {
+        const a = rng.pick([0.5, 1.5]);
+        const c = rng.int(1, 9);
+        ys = xs.map((_, i) => a * (i + 1) * (i + 1) + c);
+      }
+    } else if (kind === 0) {
       const m = rng.nz(-8, 8);
       const b = rng.int(-10, 30);
       ys = xs.map((_, i) => b + m * i);
@@ -736,8 +749,7 @@ const matchExponentialGraph = {
   lesson: '4.6',
   title: 'Matching Exponential Graphs',
   gen(rng, level) {
-    const base = rng.pick(['2', '(1/2)']);
-    const other = base === '2' ? '(1/2)' : '2';
+    const [base, other] = rng.pick([['2', '(1/2)'], ['(1/2)', '2'], ['3', '(1/3)'], ['(1/3)', '3']]);
     const s = rng.sign();
     const sg = (v) => (v > 0 ? '' : '-');
     let correct;
@@ -938,7 +950,7 @@ const residual = {
     const x = rng.int(3, 12);
     if (level === 1) {
       const m = round(rng.int(11, 59) / 10, 1);
-      const b = round(rng.int(-90, 150) / 10, 1);
+      const b = round(rng.intExcept(-90, 150, [0]) / 10, 1);
       const pred = round(m * x + b, 2);
       const act = round(pred + rng.nz(-30, 30) / 10, 1);
       return {
@@ -1060,7 +1072,7 @@ const useRegression = {
       value = m * x + b;
     } else if (level === 1) {
       const a = round(rng.nz(-9, 9) / 10, 1);
-      const b = round(rng.int(10, 60) / 10, 1);
+      const b = round(rng.int(11, 60) / 10, 1);
       const c = round(rng.int(10, 200) / 10, 1);
       model = `\\hat{y}=${a}x^2+${b}x+${c}`;
       value = a * x * x + b * x + c;

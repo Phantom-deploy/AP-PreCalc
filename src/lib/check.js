@@ -17,8 +17,17 @@ function close(a, b, tol) {
   return Math.abs(a - b) <= tol;
 }
 
+function cleanNumber(raw) {
+  return String(raw)
+    .trim()
+    .replace(/^\$\s*/, '')
+    .replace(/^(-)\s*\$\s*/, '$1')
+    .replace(/\s*%$/, '')
+    .replace(/(\d),(?=\d{3}(?!\d))/g, '$1');
+}
+
 function numericValue(raw) {
-  const ast = parse(stripEquals(raw));
+  const ast = parse(cleanNumber(stripEquals(raw)));
   if (variablesOf(ast).size) throw new Error('Your answer should be a number.');
   const v = evaluate(ast);
   if (Number.isNaN(v)) throw new Error('That expression is undefined.');
@@ -38,11 +47,16 @@ function checkNumber(part, raw) {
   }
   const tol = part.tol ?? defaultTol(part.value);
   if (close(v, part.value, tol)) return { ok: true };
-  const near = Math.abs(v - part.value) <= 0.012 * Math.max(1, Math.abs(part.value));
-  if (near && part.tol == null) {
-    return { ok: false, msg: 'Close, but this answer must be exact. Use a fraction instead of a rounded decimal.' };
+  const diff = Math.abs(v - part.value);
+  if (part.tol == null) {
+    // a rounded decimal typed for an exact non-integer answer, such as 0.33 for 1/3
+    const typedDecimal = /\d\.\d/.test(String(raw));
+    if (typedDecimal && !Number.isInteger(part.value) && diff <= 0.006 * Math.max(1, Math.abs(part.value))) {
+      return { ok: false, msg: 'Close, but this answer must be exact. Use a fraction instead of a rounded decimal.' };
+    }
+    return { ok: false };
   }
-  if (near) return { ok: false, msg: 'Close. Check your rounding.' };
+  if (diff <= part.tol * 10 && part.value !== 0) return { ok: false, msg: 'Close. Check your rounding.' };
   return { ok: false };
 }
 
@@ -201,6 +215,9 @@ function checkSet(part, raw) {
   s = s.replace(/^[a-z]\s*=/i, '').replace(/^\{(.*)\}$/s, '$1');
   s = s.replace(/\bor\b|\band\b/gi, ',');
   let vals;
+  if (/\d\s+-?\d/.test(s)) {
+    return { ok: false, invalid: true, msg: 'Separate your values with commas, for example -2, 3.' };
+  }
   try {
     vals = splitTopLevel(s).map((piece) => numericValue(piece.replace(/^[a-z]\s*=/i, '')));
   } catch {

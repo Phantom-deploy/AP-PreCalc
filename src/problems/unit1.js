@@ -278,7 +278,7 @@ const functionInContext = {
         const b = rng.pick([206, 208, 211, 220]);
         const m = rng.pick([0.5, 0.8, 0.7, 1]);
         return {
-          text: `Researchers estimate the maximum heart rate $H(x)$, in beats per minute, of a person who is $x$ years old with the function $H(x)=${b}-${m}x$.`,
+          text: `Researchers estimate the maximum heart rate $H(x)$, in beats per minute, of a person who is $x$ years old with the function $H(x)=${b}-${m === 1 ? '' : m}x$.`,
           f: (x) => b - m * x,
           name: 'H',
           inputs: [20, 30, 40, 50, 60],
@@ -770,10 +770,10 @@ const arocGraph = {
     const k = -s * rng.int(2, 6);
     const f = (x) => s * (x - h) ** 2 + k;
     const visible = [];
-    for (let x = h - 3; x <= h + 3; x++) if (Math.abs(f(x)) <= 8 && Math.abs(x) <= 8) visible.push(x);
+    for (let x = h - 3; x <= h + 3; x++) if (Math.abs(f(x)) <= 7 && Math.abs(x) <= 7) visible.push(x);
     const a = rng.pick(visible.slice(0, -2));
     const b = rng.pick(visible.filter((x) => x >= a + 2));
-    const marks = level === 0 ? [{ x: a, y: f(a) }, { x: b, y: f(b) }] : [];
+    const marks = [{ x: a, y: f(a) }, { x: b, y: f(b) }];
     return {
       prompt: `The graph of $y=f(x)$ is shown.${level === 0 ? ' The points where $x=' + a + '$ and $x=' + b + '$ are marked.' : ''}\n\n${plot({ x: [-8, 8], y: [-8, 8], curves: [{ f }], points: marks })}\n\nFind the average rate of change of $f$ on the interval $[${a}, ${b}]$.`,
       parts: [numFrac(f(b) - f(a), b - a)],

@@ -27,7 +27,7 @@ export function plot(opts) {
   const [y0, y1] = opts.y;
   const W = opts.w || 340;
   const H = opts.h || 340;
-  const pad = { l: 34, r: 16, t: 16, b: 30 };
+  const pad = { l: opts.padL || 34, r: 16, t: 16, b: 30 };
   const iw = W - pad.l - pad.r;
   const ih = H - pad.t - pad.b;
   const sx = (x) => pad.l + ((x - x0) / (x1 - x0)) * iw;
@@ -63,9 +63,9 @@ export function plot(opts) {
   for (let y = Math.ceil(y0 / ystep - eps) * ystep; y <= y1 + eps; y += ystep) {
     const idx = Math.round(y / ystep);
     out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#dddddd" stroke-width="1"/>`);
-    if (idx % yEvery === 0 && Math.abs(y - axisY) > eps) {
+    if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin) && Math.abs(y - y1) > eps) {
       out.push(
-        `<text x="${Math.max(sx(axisX) - 5, 4 + 26)}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#333333">${yTick(y)}</text>`,
+        `<text x="${Math.max(sx(axisX) - 8, pad.l - 4)}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#333333">${yTick(y)}</text>`,
       );
     }
   }

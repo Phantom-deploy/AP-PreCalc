@@ -65,7 +65,7 @@ export function plot(opts) {
     out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#dddddd" stroke-width="1"/>`);
     if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin) && Math.abs(y - y1) > eps) {
       out.push(
-        `<text x="${Math.max(sx(axisX) - 8, pad.l - 4)}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#333333">${yTick(y)}</text>`,
+        `<text x="${Math.max(sx(axisX) - 12, pad.l - 4)}" y="${sy(y) + 4}" font-size="11" text-anchor="end" fill="#333333">${yTick(y)}</text>`,
       );
     }
   }

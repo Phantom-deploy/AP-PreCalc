@@ -31,13 +31,16 @@ export function renderDaily(root, params = {}) {
   function drawTabs() {
     const rec = record();
     tabs.innerHTML = plan.slots
-      .map((s, i) => `<button type="button" role="tab" class="daily-tab${i === active ? ' active' : ''}" aria-selected="${i === active}" data-i="${i}">Problem ${i + 1}${rec.solved[i] ? '<span class="mark check" aria-label="solved">&#10003;</span>' : ''}</button>`)
+      .map((s, i) => `<button type="button" role="tab" class="daily-tab${i === active ? ' active' : ''}" aria-selected="${i === active}" data-i="${i}">Problem ${i + 1}${rec.solved[i] ? '<span class="mark check" aria-label="solved">&#10003;</span>' : (rec.revealed || [])[i] ? '<span class="shown">(answer shown)</span>' : ''}</button>`)
       .join('');
     const n = rec.solved.filter(Boolean).length;
+    const finished = rec.solved.every((v, j) => v || (rec.revealed || [])[j]);
     summary.innerHTML =
       n === 3
         ? `<div class="alert alert-ok" style="margin:0 0 16px"><h3>All 3 daily problems solved</h3><p>Come back tomorrow for a new set, or keep going with <a href="#/">unlimited practice</a>.</p></div>`
-        : '';
+        : finished
+          ? `<div class="alert alert-info" style="margin:0 0 16px"><h3>Daily problems finished</h3><p>You solved ${n} of 3 today. Try the topic of any problem you missed in <a href="#/">unlimited practice</a>, and come back tomorrow for a new set.</p></div>`
+          : '';
   }
 
   function show(i) {

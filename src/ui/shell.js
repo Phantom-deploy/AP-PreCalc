@@ -16,7 +16,7 @@ const ICONS = {
   cal: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="1.5"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   back: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 12H5M11 6l-6 6 6 6"/></svg>',
   calc: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8 7h8M8.5 11h.01M12 11h.01M15.5 11h.01M8.5 14.5h.01M12 14.5h.01M15.5 14.5h.01M8.5 18h.01M12 18h.01M15.5 18h.01" stroke-width="2.2" stroke-linecap="round"/></svg>',
-  graph: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 3v18M3 20h18" opacity=".55"/><path d="M5 17c3-1 4-9 7-9s3 5 5 5 2-6 3-8"/><path d="M17 4l3 1-1 3"/></svg>',
+  graph: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 22V3M2 22h20" opacity=".6"/><path d="M3.5 19c3.5-1 4.5-13 8.5-13s3.5 9 6 9 2.5-7 3.5-12"/><path d="M19 4.5l2.5-1.5.5 2.8"/></svg>',
   plus: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 7.5v9M7.5 12h9"/></svg>',
   user: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/></svg>',
 };
@@ -103,6 +103,12 @@ export function activitySidebar({ title, sub, progressLabel, progress, items }) 
 }
 
 export function wireSidebar(side, rerender) {
+  // keep the selected skill visible in a long list, like DeltaMath
+  const list = side.querySelector('.side-list');
+  const current = list?.querySelector('.on');
+  if (list && current && list.scrollHeight > list.clientHeight) {
+    list.scrollTop = Math.max(0, current.offsetTop - list.clientHeight / 2 + current.offsetHeight / 2);
+  }
   side.querySelector('[data-act="sci"]')?.addEventListener('click', openScientific);
   side.querySelector('[data-act="graph"]')?.addEventListener('click', openGraphing);
   side.querySelector('[data-act="name"]')?.addEventListener('click', () => {

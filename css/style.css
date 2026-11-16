@@ -21,7 +21,7 @@
   --info-bg: #eef2ff; --info-line: #c3cbff; --info-text: #2f3a8f;
   --serif: KaTeX_Main, "Times New Roman", Times, serif;
   --sans: Lato, "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --side-w: 384px;
+  --side-w: clamp(300px, 25vw, 520px);
   --heading: Lora, Georgia, serif;
 }
 
@@ -373,11 +373,8 @@ p { margin: 0 0 12px; }
 .daily-link, .daily-link.on { color: var(--indigo); }
 .daily-link svg, .daily-link.on svg { color: var(--indigo); }
 .brand { margin-bottom: 64px; }
-.side:has(.back-link) .brand { margin-bottom: 44px; }
 .side-foot { padding-top: 33px; }
 .tool-link { padding: 5px 14px; font-size: 17px; }
-.side:has(.back-link) .side-foot { font-size: 15px; }
-.side:has(.back-link) .tool-link { font-size: 15px; }
 .account { margin-top: 26px; }
 .tab { padding: 12px 19px 9px; border-bottom-width: 6px; margin-bottom: 0; color: #585858; }
 .tab.on { color: var(--text); }
@@ -410,4 +407,49 @@ svg.graph line[stroke="#e6e6e6"], svg.graph rect[stroke="#e6e6e6"] { shape-rende
   .tab { padding: 10px 12px 9px; }
   .tabs { gap: 0 4px; }
   .part input[type="text"] { width: 100%; }
+}
+
+/* ---------- second measured pass. Screenshots 2 to 5 were taken at 90% browser zoom,
+   so the practice page here matches real DeltaMath at 100% (values divided by 0.9). ---------- */
+@media (min-width: 901px) {
+  .page-body.narrow-top { zoom: 1.1111; }
+  .side:has(.back-link) .brand { margin-bottom: 49px; }
+  .back-link { font-size: 20px; gap: 4px; margin-bottom: 34px; }
+  .back-link svg { width: 25px; height: 25px; }
+  .side-title { font-size: 19px; }
+  .side-sub { font-size: 18px; }
+  .side-grade { font-size: 18px; margin-bottom: 3px; }
+  .side:has(.back-link) .bar { height: 9px; }
+  .side-list { margin-top: 36px; position: relative; }
+  .side-skill { font-size: 17px; padding: 9px 11px; gap: 11px; margin-bottom: 11px; }
+  .side-skill .ring, .side-skill .ring svg { width: 24px; height: 24px; }
+}
+.side { padding-bottom: 5px; }
+.tool-link { margin-bottom: 0; }
+.side-item[href^="#/unit/"] svg { width: 26px; height: 26px; margin-left: -1px; }
+.name-btn { color: #373737; }
+.tabs { gap: 0 77px; }
+.tab .pill { margin-left: 16px; }
+.tab { border-bottom-width: 5px; }
+.empty svg, .today-card svg { transform: translateX(-4px); margin-bottom: 3px; }
+.empty-title, .today-what { margin-bottom: 10px; }
+.card.empty p, .card.today-card p:not(.today-when) { color: #000000; }
+.segbar span { border-radius: 0; }
+.segbar span:first-child { border-radius: 4px 0 0 4px; }
+.segbar span:last-child { border-radius: 0 4px 4px 0; }
+.score-line { color: #0d1116; }
+.q-head .btn-outline { padding: 11px 35px; }
+.q-head { margin-bottom: 25px; }
+.kbd-btn { margin: -6px -8px -6px auto; }
+.kbd-btn svg { width: 24px; height: 16px; }
+.answer-panel { padding-bottom: 30px; }
+@media (max-width: 900px) {
+  .side-item[href^="#/unit/"] svg { width: 18px; height: 18px; margin-left: 0; }
+  .tabs { gap: 0 4px; }
+  .tab .pill { margin-left: 8px; }
+}
+@media (min-width: 901px) {
+  .page-body.narrow-top { padding-top: 34px; }
+  .side:has(.back-link) .brand { margin-bottom: 66px; }
+  .side-list { padding-top: 34px; }
 }

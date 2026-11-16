@@ -63,7 +63,9 @@ export function mountProblem(root, opts) {
     (opts.headerButton ? `<button type="button" class="btn btn-outline" data-act="header">${esc(opts.headerButton.label)}</button>` : '') +
     `</div>` +
     `<div class="problem">${renderProblemText(problem.prompt)}</div>` +
-    `<div class="answer-panel"><div class="a-head"><h3 class="serif">Answer</h3><span class="attempt"></span></div>` +
+    `<div class="answer-panel"><div class="a-head"><h3 class="serif">Answer</h3><span class="attempt"></span>` +
+    (problem.parts.some((p) => p.type !== 'choice') ? `<button type="button" class="kbd-btn" data-act="keys" aria-pressed="true" title="Show or hide the symbol buttons" aria-label="Show or hide the symbol buttons"><svg width="30" height="20" viewBox="0 0 30 20" fill="none" stroke="#1f2937" stroke-width="1.6" aria-hidden="true"><rect x="1" y="1" width="28" height="18" rx="2.5"/><path d="M6 6h2M11 6h2M16 6h2M21 6h3M6 10h2M11 10h2M16 10h2M21 10h3M9 14h12" stroke-linecap="round"/></svg></button>` : '') +
+    `</div>` +
     `<form class="answer-area" novalidate>${partsHtml}` +
     `<div class="actions"><button type="submit" class="btn btn-primary">Submit Answer</button></div></form>` +
     `<div class="feedback" aria-live="polite"></div></div>`;
@@ -82,6 +84,10 @@ export function mountProblem(root, opts) {
   setAttempt(attemptText());
 
   root.querySelector('[data-act="header"]')?.addEventListener('click', () => opts.headerButton.onClick());
+  root.querySelector('[data-act="keys"]')?.addEventListener('click', (ev) => {
+    const hidden = root.classList.toggle('keys-hidden');
+    ev.currentTarget.setAttribute('aria-pressed', String(!hidden));
+  });
 
   const inputOf = (i) => partEls[i].querySelector('input[type="text"]');
   const readInputs = () =>

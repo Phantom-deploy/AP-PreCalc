@@ -12,9 +12,9 @@ function niceLabel(v) {
 
 function arrow(tx, ty, dir) {
   // filled arrowhead with a concave back, pointing in direction dir (r, l, u, d)
-  const L = 12;
-  const Wd = 5;
-  const back = 8;
+  const L = 14;
+  const Wd = 6.5;
+  const back = 10;
   const pts = {
     r: [[tx, ty], [tx - L, ty - Wd], [tx - back, ty], [tx - L, ty + Wd]],
     l: [[tx, ty], [tx + L, ty - Wd], [tx + back, ty], [tx + L, ty + Wd]],
@@ -29,9 +29,9 @@ function arrowAlong(tx, ty, dx, dy, color) {
   const len = Math.hypot(dx, dy) || 1;
   const ux = dx / len;
   const uy = dy / len;
-  const L = 12;
-  const Wd = 5;
-  const back = 8;
+  const L = 14;
+  const Wd = 6.5;
+  const back = 10;
   const p = (a, b) => `${(tx - ux * a - uy * b).toFixed(1)} ${(ty - uy * a + ux * b).toFixed(1)}`;
   return `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)}L${p(L, Wd)}L${p(back, 0)}L${p(L, -Wd)}Z" fill="${color}"/>`;
 }
@@ -96,14 +96,14 @@ export function plot(opts) {
     out.push(`<line x1="${sx(x)}" y1="${pad.t}" x2="${sx(x)}" y2="${pad.t + ih}" stroke="#e6e6e6" stroke-width="1"/>`);
     if (idx % xEvery === 0 && Math.abs(x - axisX) > eps) {
       const ly = opts.xLabelsBottom ? pad.t + ih + 17 : ay + 17;
-      labels.push(`<text x="${sx(x)}" y="${ly}" font-size="13" text-anchor="middle" fill="#222222">${xTick(x)}</text>`);
+      labels.push(`<text x="${sx(x)}" y="${ly}" font-size="13" text-anchor="middle" fill="#000000">${xTick(x)}</text>`);
     }
   }
   for (let y = Math.ceil(y0 / ystep - eps) * ystep; y <= y1 + eps; y += ystep) {
     const idx = Math.round(y / ystep);
     out.push(`<line x1="${pad.l}" y1="${sy(y)}" x2="${pad.l + iw}" y2="${sy(y)}" stroke="#e6e6e6" stroke-width="1"/>`);
     if (idx % yEvery === 0 && (Math.abs(y - axisY) > eps || opts.labelYOrigin)) {
-      labels.push(`<text x="${ax - 9}" y="${sy(y) + 5}" font-size="13" text-anchor="end" fill="#222222">${yTick(y)}</text>`);
+      labels.push(`<text x="${ax - 6}" y="${sy(y) + 5}" font-size="13" text-anchor="end" fill="#000000">${yTick(y)}</text>`);
     }
   }
 

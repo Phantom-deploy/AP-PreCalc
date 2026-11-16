@@ -84,6 +84,7 @@ export function activitySidebar({ title, sub, progressLabel, progress, items }) 
     `<div class="side-title">${esc(title)}</div>` +
     `<div class="side-sub">${sub}</div>` +
     `<div class="side-grade">${progressLabel}</div>${bar(progress, progressLabel.replace(/<[^>]+>/g, ''))}` +
+    `<button type="button" class="list-toggle" data-act="toggle-list" aria-expanded="false">Show ${items.length} ${items.length === 1 ? 'item' : 'items'} in this list</button>` +
     `<div class="side-list">${items
       .map((it) => `<a class="side-skill${it.active ? ' on' : ''}" href="${it.href}"${it.active ? ' aria-current="page"' : ''}>${it.icon}<span>${it.html}</span></a>`)
       .join('')}</div>` +
@@ -93,6 +94,13 @@ export function activitySidebar({ title, sub, progressLabel, progress, items }) 
 }
 
 export function wireSidebar(side, rerender) {
+  side.querySelector('[data-act="toggle-list"]')?.addEventListener('click', (ev) => {
+    const open = side.classList.toggle('list-open');
+    ev.currentTarget.setAttribute('aria-expanded', String(open));
+    const btn = ev.currentTarget;
+    btn.dataset.label = btn.dataset.label || btn.textContent;
+    btn.textContent = open ? 'Hide list' : btn.dataset.label;
+  });
   side.querySelector('[data-act="reset"]')?.addEventListener('click', () => {
     if (window.confirm('Erase all saved scores and daily problem history on this device?')) {
       resetAll();

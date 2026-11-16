@@ -326,8 +326,7 @@ export function answerTex(part) {
       return null; // the choice text itself is shown
     case 'interval':
       return String(part.ans)
-        .replace(/-inf/g, '-\\infty')
-        .replace(/inf/g, '\\infty')
+        .replace(/-?inf/g, (m) => (m[0] === '-' ? '-\\infty' : '\\infty'))
         .replace(/\s*U\s*/g, '\\cup ');
     case 'point':
       return `\\left(${part.ans.replace(/^\(|\)$/g, '').split(',').map((p) => safeTex(p)).join(',\\ ')}\\right)`;

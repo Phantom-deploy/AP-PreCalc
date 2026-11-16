@@ -81,7 +81,9 @@ export function renderDaily({ side, view }, params = {}) {
           rr.tries[i] += 1;
           if (res.correct) {
             rr.solved[i] = true;
-            recordAttempt(s.typeId, true, firstTry);
+            if (res.attempts <= 2) recordAttempt(s.typeId, true, firstTry);
+          } else if (res.attempts === 1 && rr.tries[i] === 1) {
+            recordAttempt(s.typeId, false, false);
           }
         }
         setDaily(date, rr);

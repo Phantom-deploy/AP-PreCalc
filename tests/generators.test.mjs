@@ -95,3 +95,18 @@ for (const type of TYPES) {
     }
   });
 }
+
+test('answer display writes infinity correctly in intervals', () => {
+  assert.equal(answerTex({ type: 'interval', ans: '(-inf, inf)' }), '(-\\infty, \\infty)');
+  assert.equal(answerTex({ type: 'interval', ans: '(-inf, 2) U (2, inf)' }), '(-\\infty, 2)\\cup (2, \\infty)');
+  for (const type of TYPES) {
+    for (let level = 0; level < 3; level++) {
+      for (let seed = 1; seed < 40; seed++) {
+        for (const part of generate(type.id, level, seed).parts) {
+          if (part.type === 'choice') continue;
+          assert.ok(!/inftyty|\\\\infty/.test(answerTex(part)), `${type.id}: ${answerTex(part)}`);
+        }
+      }
+    }
+  }
+});

@@ -81,13 +81,14 @@ export function renderHome({ side, view }, params = {}) {
       ? `<div class="card list-card">${complete.map((t) => skillRow(t, true)).join('')}</div>`
       : emptyCard('No completed skills yet.', `A skill is complete after ${GOAL} correct answers. Pick any skill to start.`, '#/unit/1', 'Start Practicing');
   } else {
-    const allDone = solved === 3;
+    const finishedCount = daily.solved.filter((v, j) => v || (daily.revealed || [])[j]).length;
+    const allDone = finishedCount === 3;
     content =
       `<div class="card today-card">${PARTY}` +
       `<p class="today-when">Today, ${formatDate(today)}</p>` +
       `<p class="serif today-what">${esc(describeDay(today))}</p>` +
-      `<p>${allDone ? `You solved all 3 daily problems${streak > 1 ? ` &middot; ${streak} day streak` : ''}. Keep practicing any skill below.` : `Your 3 daily problems are ready: ${solved} of 3 solved${streak > 1 ? ` &middot; ${streak} day streak` : ''}.`}</p>` +
-      `<a class="btn btn-primary" href="#/daily">${allDone ? 'Review Daily Problems' : solved ? 'Continue Daily Problems' : 'Start Daily Problems'}</a></div>` +
+      `<p>${allDone ? `Daily problems finished: ${solved} of 3 solved${streak > 1 ? ` &middot; ${streak} day streak` : ''}. Keep practicing any skill below.` : `Your 3 daily problems are ready: ${solved} of 3 solved${streak > 1 ? ` &middot; ${streak} day streak` : ''}.`}</p>` +
+      `<a class="btn btn-primary" href="#/daily">${allDone ? 'Review Daily Problems' : finishedCount ? 'Continue Daily Problems' : 'Start Daily Problems'}</a></div>` +
       UNITS.map((u) => unitCard(u, today)).join('');
   }
 

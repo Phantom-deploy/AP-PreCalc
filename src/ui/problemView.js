@@ -115,6 +115,7 @@ export function mountProblem(root, opts) {
       el.disabled = locked;
     });
     submitBtn.disabled = locked;
+    if (locked) globalThis.getSelection?.()?.removeAllRanges();
     partEls.forEach((el) => el.classList.toggle('locked', locked));
   }
 

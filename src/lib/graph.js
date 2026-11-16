@@ -24,6 +24,18 @@ function arrow(tx, ty, dir) {
   return `<path d="M${pts.map((p) => p.map((n) => n.toFixed(1)).join(' ')).join('L')}Z" fill="#000000"/>`;
 }
 
+// arrowhead at (tx, ty) pointing along the screen direction (dx, dy)
+function arrowAlong(tx, ty, dx, dy, color) {
+  const len = Math.hypot(dx, dy) || 1;
+  const ux = dx / len;
+  const uy = dy / len;
+  const L = 12;
+  const Wd = 5;
+  const back = 8;
+  const p = (a, b) => `${(tx - ux * a - uy * b).toFixed(1)} ${(ty - uy * a + ux * b).toFixed(1)}`;
+  return `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)}L${p(L, Wd)}L${p(back, 0)}L${p(L, -Wd)}Z" fill="${color}"/>`;
+}
+
 /*
  opts:
    x: [min, max], y: [min, max]
@@ -125,6 +137,7 @@ export function plot(opts) {
     `<text x="${ax}" y="${top - 7}" font-size="15" font-style="italic" font-family="${LABEL_FONT}" text-anchor="middle" fill="#000000">${yname}</text>`,
   );
 
+  const curveArrows = [];
   out.push(`<g clip-path="url(#${id})">`);
   const span = y1 - y0;
   for (const c of opts.curves || []) {
@@ -149,13 +162,47 @@ export function plot(opts) {
       pen = true;
       prevY = y;
     }
-    out.push(`<path d="${d}" fill="none" stroke="${COLORS[c.color] || c.color || COLORS.blue}" stroke-width="2.4" stroke-linejoin="round"/>`);
+    const color = COLORS[c.color] || c.color || '#000000';
+    out.push(`<path d="${d}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linejoin="round"/>`);
+    // arrowheads where the curve leaves the window, like DeltaMath
+    if (!c.noArrows) {
+      const inside = (y) => Number.isFinite(y) && y >= y0 && y <= y1;
+      const pt = (x) => [sx(x), sy(c.f(x))];
+      const xs = Array.from({ length: N + 1 }, (_, i) => from + ((to - from) * i) / N);
+      for (let i = 1; i <= N; i++) {
+        const a = inside(c.f(xs[i - 1]));
+        const b = inside(c.f(xs[i]));
+        if (a && !b && i >= 2) {
+          const [px, py] = pt(xs[i - 2]);
+          const [qx, qy] = pt(xs[i - 1]);
+          curveArrows.push(arrowAlong(qx, Math.min(Math.max(qy, pad.t), pad.t + ih), qx - px, qy - py, color));
+        }
+        if (!a && b && i + 1 <= N) {
+          const [px, py] = pt(xs[i + 1]);
+          const [qx, qy] = pt(xs[i]);
+          curveArrows.push(arrowAlong(qx, Math.min(Math.max(qy, pad.t), pad.t + ih), qx - px, qy - py, color));
+        }
+      }
+      const ys = c.f(from);
+      if (inside(ys) && from <= x0 + 1e-9) {
+        const [px, py] = pt(from + (to - from) / N);
+        const [qx, qy] = pt(from);
+        curveArrows.push(arrowAlong(qx, qy, qx - px, qy - py, color));
+      }
+      const ye = c.f(to);
+      if (inside(ye) && to >= x1 - 1e-9) {
+        const [px, py] = pt(to - (to - from) / N);
+        const [qx, qy] = pt(to);
+        curveArrows.push(arrowAlong(qx, qy, qx - px, qy - py, color));
+      }
+    }
   }
   for (const p of opts.paths || []) {
     const d = p.pts.map(([x, y], i) => `${i ? 'L' : 'M'}${sx(x).toFixed(2)} ${sy(y).toFixed(2)}`).join('');
     out.push(`<path d="${d}" fill="none" stroke="${COLORS[p.color] || p.color || COLORS.blue}" stroke-width="2.4" stroke-linejoin="round"/>`);
   }
   out.push('</g>');
+  out.push(curveArrows.join(''));
   for (const p of opts.points || []) {
     const custom = COLORS[p.color] || p.color;
     const fill = p.open ? '#ffffff' : custom || '#5481b5';
